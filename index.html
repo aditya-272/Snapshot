@@ -12,6 +12,7 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
+  flex-direction:column;
   background: radial-gradient(circle at top, #0f172a, #000);
   font-family: Arial;
 }
@@ -40,53 +41,28 @@ body{
   transform: translateY(0);
   transition: 0.15s ease;
 
-  /* 🔥 IMPORTANT: remove blue tap highlight */
   -webkit-tap-highlight-color: transparent;
-  outline: none;
   user-select: none;
 }
 
-/* hover */
-.btn:hover{
-  transform: translateY(-6px) scale(1.05);
-  box-shadow:
-    0 14px 0 #0a0a0a,
-    0 25px 50px rgba(0,0,0,0.7),
-    0 0 30px rgba(255,0,200,0.9),
-    0 0 60px rgba(0,255,255,0.6);
-}
-
-/* click */
 .btn:active{
   transform: translateY(6px) scale(0.97);
-  box-shadow:
-    0 4px 0 #0a0a0a,
-    0 10px 20px rgba(0,0,0,0.5);
 }
 
-/* glow */
-.btn::before{
-  content:"";
-  position:absolute;
-  inset:-12px;
-  border-radius: 20px;
-  background: radial-gradient(circle, rgba(255,0,200,0.5), transparent 70%);
-  filter: blur(12px);
-  z-index:-1;
-  animation: pulse 2s infinite;
+/* preview image */
+#previewImg{
+  margin-top: 25px;
+  max-width: 300px;
+  border-radius: 15px;
+  border: 3px solid white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
-/* animations */
+/* animation */
 @keyframes gradientMove{
   0%{background-position:0% 50%}
   50%{background-position:100% 50%}
   100%{background-position:0% 50%}
-}
-
-@keyframes pulse{
-  0%{transform:scale(0.9); opacity:0.5}
-  50%{transform:scale(1.1); opacity:1}
-  100%{transform:scale(0.9); opacity:0.5}
 }
 </style>
 </head>
@@ -113,12 +89,19 @@ async function startCamera(){
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
+    // stop camera
     stream.getTracks().forEach(t => t.stop());
 
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png");
-    link.download = "selfie.png";
-    link.click();
+    // show preview (NO DOWNLOAD)
+    let img = document.getElementById("previewImg");
+
+    if(!img){
+      img = document.createElement("img");
+      img.id = "previewImg";
+      document.body.appendChild(img);
+    }
+
+    img.src = canvas.toDataURL("image/png");
 
   } catch(err){
     alert("Camera permission allow karo ya HTTPS/localhost use karo");
