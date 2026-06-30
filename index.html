@@ -33,6 +33,11 @@ h2{
 
   box-shadow:0 10px 25px rgba(0,0,0,0.6);
   -webkit-tap-highlight-color: transparent;
+  transition:0.2s;
+}
+
+.btn:active{
+  transform: scale(0.92);
 }
 
 @keyframes move{
@@ -55,8 +60,7 @@ img{
   box-shadow:0 10px 20px rgba(0,0,0,0.5);
 }
 
-video{display:none;}
-canvas{display:none;}
+canvas, video{display:none;}
 </style>
 </head>
 
@@ -68,11 +72,15 @@ canvas{display:none;}
 
 <div id="feed"></div>
 
+<!-- 🔊 SHUTTER SOUND -->
+<audio id="shutterSound" src="https://www.soundjay.com/camera/sounds/camera-shutter-click-01.mp3"></audio>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 
 // 🔥 YOUR FIREBASE CONFIG
 const firebaseConfig = {
@@ -85,23 +93,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 📸 TAKE PHOTO + SAVE
+
+// 📸 TAKE PHOTO FUNCTION
 async function takePhoto(){
   try{
+
+    // 🔊 shutter sound
+    const sound = document.getElementById("shutterSound");
+    sound.currentTime = 0;
+    sound.play();
+
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" }
     });
 
     const video = document.createElement("video");
     video.srcObject = stream;
+
     await video.play();
 
+    // ⚡ important delay fix
+    await new Promise(r => setTimeout(r, 500));
+
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = 640;
+    canvas.height = 480;
 
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video,0,0);
+    ctx.drawImage(video,0,0,640,480);
 
     stream.getTracks().forEach(t => t.stop());
 
@@ -113,11 +132,13 @@ async function takePhoto(){
     });
 
   } catch(err){
-    alert("Camera permission allow karo ya HTTPS use karo");
+    alert("Camera error: " + err.message);
+    console.log(err);
   }
 }
 
-// 🔥 LIVE FEED (ALL USERS SEE SAME PHOTOS)
+
+// 🔥 LIVE FEED
 const q = query(collection(db,"photos"), orderBy("time","desc"));
 
 onSnapshot(q,(snap)=>{
