@@ -14,7 +14,11 @@ body{
   text-align:center;
 }
 
-/* BUTTON */
+h2{
+  margin-top:15px;
+}
+
+/* MAIN BUTTON */
 .btn{
   margin:20px;
   padding:18px 40px;
@@ -23,10 +27,10 @@ body{
   border:none;
   border-radius:14px;
   cursor:pointer;
+
   background: linear-gradient(135deg,#ff00cc,#00f5ff,#ffcc00);
   background-size:300% 300%;
   animation: move 4s infinite linear;
-  transition:0.2s;
 }
 
 .btn:active{
@@ -53,24 +57,46 @@ img{
   border:2px solid white;
 }
 
-/* CORNER */
-#cornerFeed{
+/* FLASH */
+.flash{
   position:fixed;
-  top:10px;
-  right:10px;
-  width:120px;
-  height:200px;
-  overflow:auto;
-  background:rgba(0,0,0,0.6);
-  border:1px solid white;
-  border-radius:10px;
-  padding:5px;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:white;
+  opacity:0;
+  pointer-events:none;
+  transition:0.2s;
+  z-index:999;
 }
 
-#cornerFeed img{
-  width:100%;
-  margin-bottom:5px;
-  border-radius:6px;
+/* SMALL SMILE BUTTON */
+#viewBtn{
+  position:fixed;
+  bottom:20px;
+  left:20px;
+
+  width:38px;
+  height:38px;
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:16px;
+  border:none;
+  cursor:pointer;
+
+  background: linear-gradient(135deg,#ff00cc,#00f5ff);
+  color:white;
+
+  box-shadow:0 8px 15px rgba(0,0,0,0.5);
+}
+
+#viewBtn:active{
+  transform:scale(0.9);
 }
 
 /* MODAL */
@@ -95,19 +121,12 @@ img{
   border-radius:10px;
 }
 
-/* FLASH */
-.flash{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:white;
-  opacity:0;
-  pointer-events:none;
-  z-index:999;
-  transition:0.2s;
+/* HIDE RIGHT CORNER FEED COMPLETELY */
+#cornerFeed{
+  display:none;
 }
+
+canvas, video{display:none;}
 </style>
 </head>
 
@@ -116,10 +135,12 @@ img{
 <h2>🔥 Hit Me Camera App</h2>
 
 <button class="btn" onclick="takePhoto()">🔥 HIT ME 💥</button>
-<button class="btn" onclick="openGallery()">📂 View Photos</button>
+
+<button id="viewBtn" onclick="openGallery()">😊</button>
 
 <div id="feed"></div>
 <div id="cornerFeed"></div>
+
 <div id="galleryModal" onclick="closeGallery()"></div>
 <div class="flash" id="flash"></div>
 
@@ -131,7 +152,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* FIREBASE */
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
@@ -143,7 +164,7 @@ const db = getFirestore(app);
 
 let allPhotos = [];
 
-/* CAMERA */
+/* TAKE PHOTO */
 async function takePhoto(){
 
   const sound = document.getElementById("shutterSound");
@@ -155,11 +176,10 @@ async function takePhoto(){
   setTimeout(()=>flash.style.opacity="0",150);
 
   const stream = await navigator.mediaDevices.getUserMedia({video:true});
-
   const video = document.createElement("video");
   video.srcObject = stream;
-  await video.play();
 
+  await video.play();
   await new Promise(r=>setTimeout(r,500));
 
   const canvas = document.createElement("canvas");
@@ -190,15 +210,10 @@ async function takePhoto(){
 function render(image){
   allPhotos.unshift(image);
 
-  const corner = document.getElementById("cornerFeed");
+  const feed = document.getElementById("feed");
   const img = document.createElement("img");
   img.src = image;
-  corner.prepend(img);
-
-  const feed = document.getElementById("feed");
-  const img2 = document.createElement("img");
-  img2.src = image;
-  feed.prepend(img2);
+  feed.prepend(img);
 }
 
 /* OFFLINE */
