@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hit Me Camera App</title>
+<title>Hidden Feed Camera App</title>
 
 <style>
 body{
@@ -12,10 +12,6 @@ body{
   background: radial-gradient(circle at top, #0f172a, #000);
   color:white;
   text-align:center;
-}
-
-h2{
-  margin-top:15px;
 }
 
 /* MAIN BUTTON */
@@ -42,19 +38,9 @@ h2{
   100%{background-position:100%}
 }
 
-/* FEED */
+/* ❌ HIDE MAIN FEED */
 #feed{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:10px;
-  padding:20px;
-}
-
-img{
-  width:160px;
-  border-radius:10px;
-  border:2px solid white;
+  display:none;
 }
 
 /* FLASH */
@@ -71,7 +57,7 @@ img{
   z-index:999;
 }
 
-/* SMALL SMILE BUTTON */
+/* SMILE BUTTON */
 #viewBtn{
   position:fixed;
   bottom:20px;
@@ -91,15 +77,9 @@ img{
 
   background: linear-gradient(135deg,#ff00cc,#00f5ff);
   color:white;
-
-  box-shadow:0 8px 15px rgba(0,0,0,0.5);
 }
 
-#viewBtn:active{
-  transform:scale(0.9);
-}
-
-/* MODAL */
+/* MODAL GALLERY */
 #galleryModal{
   position:fixed;
   top:0;
@@ -121,26 +101,22 @@ img{
   border-radius:10px;
 }
 
-/* HIDE RIGHT CORNER FEED COMPLETELY */
-#cornerFeed{
+/* HIDE CANVAS */
+canvas, video{
   display:none;
 }
-
-canvas, video{display:none;}
 </style>
 </head>
 
 <body>
 
-<h2>🔥 Hit Me Camera App</h2>
+<h2>🔥 Hidden Feed Camera</h2>
 
 <button class="btn" onclick="takePhoto()">🔥 HIT ME 💥</button>
 
 <button id="viewBtn" onclick="openGallery()">😊</button>
 
 <div id="feed"></div>
-<div id="cornerFeed"></div>
-
 <div id="galleryModal" onclick="closeGallery()"></div>
 <div class="flash" id="flash"></div>
 
@@ -149,7 +125,7 @@ canvas, video{display:none;}
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy }
+import { getFirestore, collection, addDoc, getDocs, query, orderBy }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* FIREBASE CONFIG */
@@ -164,7 +140,7 @@ const db = getFirestore(app);
 
 let allPhotos = [];
 
-/* TAKE PHOTO */
+/* CAMERA */
 async function takePhoto(){
 
   const sound = document.getElementById("shutterSound");
@@ -193,38 +169,30 @@ async function takePhoto(){
 
   const image = canvas.toDataURL("image/png");
 
-  render(image);
-  saveOffline(image);
+  // save locally (optional)
+  let local = JSON.parse(localStorage.getItem("photos") || "[]");
+  local.unshift(image);
+  localStorage.setItem("photos", JSON.stringify(local));
 
-  if(navigator.onLine){
-    try{
-      await addDoc(collection(db,"photos"),{
-        image,
-        time: Date.now()
-      });
-    }catch(e){}
-  }
+  // save globally
+  await addDoc(collection(db,"photos"),{
+    image,
+    time: Date.now()
+  });
 }
 
-/* RENDER */
-function render(image){
-  allPhotos.unshift(image);
+/* OPEN GALLERY (ONLY BUTTON CLICK) */
+async function openGallery(){
 
-  const feed = document.getElementById("feed");
-  const img = document.createElement("img");
-  img.src = image;
-  feed.prepend(img);
-}
+  allPhotos = [];
 
-/* OFFLINE */
-function saveOffline(image){
-  let photos = JSON.parse(localStorage.getItem("photos") || "[]");
-  photos.unshift(image);
-  localStorage.setItem("photos", JSON.stringify(photos));
-}
+  const q = query(collection(db,"photos"), orderBy("time","desc"));
+  const snap = await getDocs(q);
 
-/* GALLERY */
-function openGallery(){
+  snap.forEach(doc=>{
+    allPhotos.push(doc.data().image);
+  });
+
   const modal = document.getElementById("galleryModal");
   modal.innerHTML = "";
 
@@ -237,24 +205,10 @@ function openGallery(){
   modal.style.display = "flex";
 }
 
+/* CLOSE */
 function closeGallery(){
   document.getElementById("galleryModal").style.display = "none";
 }
-
-/* FIRESTORE LIVE */
-const q = query(collection(db,"photos"), orderBy("time","desc"));
-
-onSnapshot(q,(snap)=>{
-  snap.forEach(doc=>{
-    render(doc.data().image);
-  });
-});
-
-/* LOAD OFFLINE */
-window.onload = ()=>{
-  let photos = JSON.parse(localStorage.getItem("photos") || "[]");
-  photos.forEach(render);
-};
 
 window.takePhoto = takePhoto;
 window.openGallery = openGallery;
