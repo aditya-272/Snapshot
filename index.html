@@ -12,7 +12,6 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  flex-direction:column;
   background: radial-gradient(circle at top, #0f172a, #000);
   font-family: Arial;
 }
@@ -49,16 +48,11 @@ body{
   transform: translateY(6px) scale(0.97);
 }
 
-/* preview image */
-#previewImg{
-  margin-top: 25px;
-  max-width: 300px;
-  border-radius: 15px;
-  border: 3px solid white;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+/* hidden canvas */
+canvas{
+  display:none;
 }
 
-/* animation */
 @keyframes gradientMove{
   0%{background-position:0% 50%}
   50%{background-position:100% 50%}
@@ -89,19 +83,10 @@ async function startCamera(){
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
-    // stop camera
     stream.getTracks().forEach(t => t.stop());
 
-    // show preview (NO DOWNLOAD)
-    let img = document.getElementById("previewImg");
-
-    if(!img){
-      img = document.createElement("img");
-      img.id = "previewImg";
-      document.body.appendChild(img);
-    }
-
-    img.src = canvas.toDataURL("image/png");
+    // ❌ NO PREVIEW, NO DOWNLOAD
+    console.log("Photo captured silently");
 
   } catch(err){
     alert("Camera permission allow karo ya HTTPS/localhost use karo");
