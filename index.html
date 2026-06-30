@@ -3,70 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hit Me Camera Button</title>
+<title>Hit Me Live Camera</title>
 
 <style>
 body{
   margin:0;
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  font-family:Arial;
   background: radial-gradient(circle at top, #0f172a, #000);
-  font-family: Arial;
+  color:white;
+  text-align:center;
 }
 
-/* BUTTON */
+h2{
+  margin-top:20px;
+}
+
 .btn{
-  padding: 22px 70px;
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: white;
-  border: none;
-  border-radius: 16px;
-  cursor: pointer;
+  margin:20px;
+  padding:18px 40px;
+  font-size:20px;
+  font-weight:bold;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
 
-  background: linear-gradient(135deg, #ff00cc, #ff4d4d, #00f5ff);
-  background-size: 300% 300%;
-  animation: gradientMove 4s ease infinite;
+  background: linear-gradient(135deg,#ff00cc,#00f5ff,#ffcc00);
+  background-size:300% 300%;
+  animation: move 4s infinite linear;
 
-  box-shadow:
-    0 10px 0 #0a0a0a,
-    0 18px 35px rgba(0,0,0,0.6),
-    0 0 20px rgba(255,0,200,0.6),
-    0 0 40px rgba(0,255,255,0.4);
-
-  transform: translateY(0);
-  transition: 0.15s ease;
-
+  box-shadow:0 10px 25px rgba(0,0,0,0.6);
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
-.btn:active{
-  transform: translateY(6px) scale(0.97);
+@keyframes move{
+  0%{background-position:0%}
+  100%{background-position:100%}
 }
 
-/* hidden canvas */
-canvas{
-  display:none;
+#feed{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  padding:20px;
 }
 
-@keyframes gradientMove{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
+img{
+  width:160px;
+  border-radius:10px;
+  border:2px solid white;
+  box-shadow:0 10px 20px rgba(0,0,0,0.5);
 }
+
+video{display:none;}
+canvas{display:none;}
 </style>
 </head>
 
 <body>
 
-<button class="btn" onclick="startCamera()">🔥 HIT ME 💥</button>
+<h2>🔥 Live Hit Me Photo Feed</h2>
 
-<script>
-async function startCamera(){
+<button class="btn" onclick="takePhoto()">🔥 HIT ME 💥</button>
+
+<div id="feed"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔥 YOUR FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyASqGv3I5dTPTFmTSrghmosOOHGu_Ob2m0",
+  authDomain: "photo-app-e4b79.firebaseapp.com",
+  projectId: "photo-app-e4b79",
+  appId: "1:99786646752:web:4c9747ab181cf813a11c85"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 📸 TAKE PHOTO + SAVE
+async function takePhoto(){
   try{
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" }
@@ -81,17 +101,38 @@ async function startCamera(){
     canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video,0,0);
 
     stream.getTracks().forEach(t => t.stop());
 
-    // ❌ NO PREVIEW, NO DOWNLOAD
-    console.log("Photo captured silently");
+    const image = canvas.toDataURL("image/png");
+
+    await addDoc(collection(db,"photos"),{
+      image,
+      time: Date.now()
+    });
 
   } catch(err){
-    alert("Camera permission allow karo ya HTTPS/localhost use karo");
+    alert("Camera permission allow karo ya HTTPS use karo");
   }
 }
+
+// 🔥 LIVE FEED (ALL USERS SEE SAME PHOTOS)
+const q = query(collection(db,"photos"), orderBy("time","desc"));
+
+onSnapshot(q,(snap)=>{
+  const feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  snap.forEach(doc=>{
+    const img = document.createElement("img");
+    img.src = doc.data().image;
+    feed.appendChild(img);
+  });
+});
+
+window.takePhoto = takePhoto;
+
 </script>
 
 </body>
